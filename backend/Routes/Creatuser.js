@@ -17,7 +17,9 @@ router.get('/', (req, res) => {
 
 router.get('/creatuser', (req, res) => {
     res.send("GET Request Called jatin")
-
+})
+router.get('/loginuser',(req,res)=>{
+  res.send("logined");
 })
 
 router.post('/createuser', (req, res) =>{
@@ -46,54 +48,99 @@ mongoose.connect(url, { useNewUrlParser: true }, async (err, res) => {
       });
     }
   });
+  
   res.json({success:true});
 });
 
-router.get("/creatuser"
-,async(req,res)=>{
-    console.log('req ==>',req)
-    console.log('res ==>',res)
-    res.send('jatin')
-    const err = validationResult(req);
-    if (!result.isEmpty()) {
-      return res.status(400).json({errors: errors.array()}) }
-     const salt = bcrypt.genSalt(5);
-     const secpassword =bcrypt.hash(req.body.password,salt);
-try {
-    await User.create({
-        name:req.body.name,
-        password:secpassword,
-        email:req.body.email,
-        location:req.body.location
-    })
-   res.json({success:true})
-} catch (error) {
-    console.log("enter valid credentials");
-    res.json({success:false})
-}
+// router.get("/createuser"
+// ,async(req,res)=>{
+//     console.log('req ==>',req)
+//     console.log('res ==>',res)
+//     res.send('jatin')
+//     const err = validationResult(req);
+//     if (!result.isEmpty()) {
+//       return res.status(400).json({errors: errors.array()}) }
+//     //  const salt = bcrypt.genSalt(5);
+//     //  const secpassword =bcrypt.hash(req.body.password,salt);
+//     const salt = await bcrypt.genSalt(10); // Use await and specify the number of rounds (e.g., 10)
+// const secpassword = await bcrypt.hash(req.body.password, salt);
+
+// try {
+//     await User.create({
+//         name:req.body.name,
+//         password:secpassword,
+//         email:req.body.email,
+//         location:req.body.location
+//     })
+//     res.json({success:true})
+//     // console.log();
+//     console.log(name);
+//     // res.redirect('/');
+// } catch (error) {
+//     console.log("enter valid credentials");
+//     res.json({success:false})
+// }
+// });
+
+
+//******************************** */
+// router.post("/createuser", async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({ errors: errors.array() });
+//     }
+
+//     const salt = await bcrypt.genSalt(10); // Use await and specify the number of rounds (e.g., 10)
+//     const secpassword = await bcrypt.hash(req.body.password, salt);
+
+//     await User.create({
+//       name: req.body.name,
+//       password: secpassword,
+//       email: req.body.email,
+//       location: req.body.location
+//     });
+
+//     res.json({ success: true });
+//   } catch (error) {
+//     console.error("Error during user creation:", error);
+//     res.status(500).json({ success: false });
+//   }
+// });
+
+
+
+
+router.post("/loginuser", async function(req, res) { 
+  try { 
+    // Check if the user email exists 
+    const user = await User.findOne({ email: req.body.email }); 
+    if (user) { 
+      // Check if password matches using bcrypt.compare
+      // const passwordMatch = await bcrypt.compare(req.body.password, user.password);
+      
+      // if (passwordMatch) { 
+        if(req.body.password=== user.password){
+        // Password matches, generate a token
+        const data = {
+          userid: user.id,
+        };
+        const token = jwt.sign(data, secret);
+        res.status(200).json({ success: true, authtoken: token });
+      } else{
+        // Password doesn't match
+        res.status(401).json({ error: "Unauthorized - Password doesn't match" });
+      }
+    } else { 
+      // User doesn't exist
+      res.status(404).json({ error: "User not found" });
+    } 
+  } catch (error) { 
+    // Server error
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  } 
 });
 
-router.post("/loginuser", async function(req, res){ 
-  try { 
-      // check if the user email exists 
-      const user = await User.findOne({email:req.body.email }); 
-      if (user) { 
-        //check if password matches  
-        if (req.body.password === user.password) { 
-          let data={
-            userid:req.body.id ,
-          }
-          const token = jwt.sign(data, secret); 
-          res.json({success:true,authtoken:token})
-          return res.status(400).json({ success:true ,authtoken});
-        } else { 
-          return res.status(400).json({ error: "password doesn't match" }); 
-        } 
-      } else { 
-        res.status(400).json({ error: "User doesn't exist" }); 
-      } 
-    } catch (error) { 
-      res.status(400).json({ error:'err' }); 
-    } 
-});
 module.exports = router;
